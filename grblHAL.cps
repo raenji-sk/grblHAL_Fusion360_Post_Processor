@@ -22,9 +22,12 @@ after M3/M4 command (spindle CW/CCW), defalut 2 seconds, enough for Kress spindl
 
 3. Arcs for XZ and YZ are disabled (add it as an option in the future?) grblHAL can not rotate them
 
-4. Merge Canned cycles from LinuxCNC (needs testing) G81,G82,G82
+4. Merge Canned cycles from LinuxCNC (needs testing) G81,G82,G83
+G83 works only when dwell is ZERO "0"
 
 5. Add 4th Axis as a selectable option in PP settings. Must be in X axis direction. Simultaneous not supported.
+
+6. add G73 - not tested
 */
 
 description = "GrblHAL";
@@ -868,8 +871,18 @@ function onCyclePoint(x, y, z) {
         }
         break;
     case "chip-breaking":
+      if ((cycle.accumulatedDepth < cycle.depth) || (P > 0)) {
         expandCyclePoint(x, y, z);
         break;
+      } else {
+        writeBlock(
+          gRetractModal.format(98), gAbsIncModal.format(90), gCycleModal.format(73),
+          getCommonCycle(x, y, z, cycle.retract),
+          "Q" + xyzFormat.format(cycle.incrementalDepth),
+          feedOutput.format(F)
+        );
+      }
+      break;
     case "deep-drilling":
         if (P > 0) {
         expandCyclePoint(x, y, z);
