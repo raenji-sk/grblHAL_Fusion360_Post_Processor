@@ -30,6 +30,7 @@ G83 works only when dwell is ZERO "0"
 6. add G73 - not tested
 
 7.18.05.2021 - add option for the A axis to be placed along X or Y (UCCNC/CNCDrive PP source)
+add 4th axis table / rotary option into PP settings
 */
 
 description = "GrblHAL";
@@ -162,6 +163,13 @@ properties = {
     ],
     value: "none",
     scope: "post"
+  },
+  fourthAxisIsTable: {
+    title: "Is the 4th Axis a table or rotary?",
+    description: "True - table, false - rotary",
+    type: "boolean",
+    value: false,
+    scope: "post"
   }
 };
 
@@ -270,7 +278,7 @@ function onOpen() {
   if (getProperty("fourthAxisAround") != "none") {
     var aAxis = createAxis({
       coordinate:0,
-      table:true,
+      table:getProperty("fourthAxisIsTable"),
       axis:[(getProperty("fourthAxisAround") == "x" ? 1 : 0), (getProperty("fourthAxisAround") == "y" ? 1 : 0), 0],
       cyclic:true,
       preference:0

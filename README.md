@@ -15,6 +15,7 @@ Added features and modifications:
 6. Add G73 Chip breaking - not tested
 
 7. 18.05.2021 - add option for the A axis to be placed along X or Y (UCCNC/CNCDrive PP source)
+   add 4th axis table / rotary option into PP settings
 
 
 ![image](https://user-images.githubusercontent.com/16104239/118500835-6bcb6a00-b728-11eb-8ea1-cbe9dddd7482.png)
