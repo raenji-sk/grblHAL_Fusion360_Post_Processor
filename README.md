@@ -1,5 +1,5 @@
-# grblHAL_Post_Processor
-Experimental grblHAL post processor with canned cycles and 4th axis support
+# grblHAL_Fusion360_Post_Processor
+Experimental grblHAL post processor with canned cycles and 4th axis support for use with Autodesk Fusion 360
 
 Added features and modifications:
 1. Update coolant settings to support air(M7) and mist(M8) as well as vac on AUX0 on Teensy 4.1 BOB. M64 P0 to turn on and M65 P0 to turn off. Aux ports range P0 to P2.
