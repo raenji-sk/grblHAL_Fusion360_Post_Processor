@@ -149,12 +149,17 @@ properties = {
     value: 2,
     scope: "post"
   },
-  has4thAxis: {
-    title: "Has 4th Axis",
-    description: "4th Axis along X axis enabled?",
-    group: 3,
-    type: "boolean",
-    value: false,
+  fourthAxisAround: {
+    title: "Fourth axis mounted along",
+    description: "Specifies which axis the fourth axis is mounted on.",
+    type: "enum",
+    values: [
+      {id: "none", title: "None"},
+      {id: "x", title: "Along X"},
+      {id: "y", title: "Along Y"}
+    ],
+    value: "none",
+    scope: "post"
   }
 };
 
@@ -251,14 +256,29 @@ function writeComment(text) {
 
 function onOpen() {
 
-  if (getProperty("has4thAxis")) { // note: setup your machine here
+  /*if (getProperty("has4thAxis")) { // note: setup your machine here
     var aAxis = createAxis({coordinate:0, table:false, axis:[1, 0, 0], range:[-360, 360], preference:1});
     //var cAxis = createAxis({coordinate:2, table:false, axis:[0, 0, 1], range:[-360, 360], preference:1});
     machineConfiguration = new MachineConfiguration(aAxis);
 
     setMachineConfiguration(machineConfiguration);
     optimizeMachineAngles2(1); // TCP mode
+  }*/
+
+  if (getProperty("fourthAxisAround") != "none") {
+    var aAxis = createAxis({
+      coordinate:0,
+      table:true,
+      axis:[(getProperty("fourthAxisAround") == "x" ? 1 : 0), (getProperty("fourthAxisAround") == "y" ? 1 : 0), 0],
+      cyclic:true,
+      preference:0
+    });
+    machineConfiguration = new MachineConfiguration(aAxis);
+
+    setMachineConfiguration(machineConfiguration);
+    optimizeMachineAngles2(1); // map tip mode
   }
+
 
   if (!machineConfiguration.isMachineCoordinate(0)) {
     aOutput.disable();
@@ -344,6 +364,10 @@ function onOpen() {
         return;
       }
     }
+  }
+
+  if ((getProperty("fourthAxisAround") != "none") && !is3D()) {
+    warning(localize("4th axis operations detected. Make sure that your WCS origin is placed on the rotary axis."));
   }
 
   if (getProperty("splitFile") != "none") {
