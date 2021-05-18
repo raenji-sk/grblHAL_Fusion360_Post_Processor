@@ -28,6 +28,8 @@ G83 works only when dwell is ZERO "0"
 5. Add 4th Axis as a selectable option in PP settings. Must be in X axis direction. Simultaneous not supported.
 
 6. add G73 - not tested
+
+7.18.05.2021 - add option for the A axis to be placed along X or Y (UCCNC/CNCDrive PP source)
 */
 
 description = "GrblHAL";
