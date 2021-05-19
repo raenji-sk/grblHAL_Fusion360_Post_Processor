@@ -31,6 +31,8 @@ G83 works only when dwell is ZERO "0"
 
 7.18.05.2021 - add option for the A axis to be placed along X or Y (UCCNC/CNCDrive PP source)
 add 4th axis table / rotary option into PP settings
+
+8. 19.05.2021 - fix 4 axis simultaneous operation
 */
 
 description = "GrblHAL";
@@ -281,6 +283,7 @@ function onOpen() {
       table:getProperty("fourthAxisIsTable"),
       axis:[(getProperty("fourthAxisAround") == "x" ? 1 : 0), (getProperty("fourthAxisAround") == "y" ? 1 : 0), 0],
       cyclic:true,
+      range: [0,360],
       preference:0
     });
     machineConfiguration = new MachineConfiguration(aAxis);
@@ -1096,8 +1099,10 @@ function onRapid5D(_x, _y, _z, _a, _b, _c) {
   var a = aOutput.format(_a);
   var b = bOutput.format(_b);
   var c = cOutput.format(_c);
-  writeBlock(gMotionModal.format(0), x, y, z, a, b, c);
-  forceFeed();
+  if (x || y || z || a || b || c) {
+    writeBlock(gMotionModal.format(0), x, y, z, a, b, c);
+    forceFeed();
+  }
 }
 
 function onLinear5D(_x, _y, _z, _a, _b, _c, feed) {
@@ -1116,6 +1121,7 @@ function onLinear5D(_x, _y, _z, _a, _b, _c, feed) {
   var b = bOutput.format(_b);
   var c = cOutput.format(_c);
   var f = getFeed(feed);
+
   if (x || y || z || a || b || c) {
     writeBlock(gMotionModal.format(1), x, y, z, a, b, c, f);
   } else if (f) {
@@ -1126,6 +1132,13 @@ function onLinear5D(_x, _y, _z, _a, _b, _c, feed) {
     }
   }
 }
+
+function onRewindMachine(_a, _b, _c) {
+  /*dummy function so that the post processor does not
+produce an error when the specified range of the axis is exceeded
+see CAM Post Processor Guide 6/12/20, 7-153 */
+}
+
 
 function forceCircular(plane) {
   switch (plane) {
