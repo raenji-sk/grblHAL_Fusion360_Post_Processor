@@ -20,4 +20,4 @@ Added features and modifications:
 8. 19.05.2021 - fix 4 axis simultaneous operation
 
 
-![image](https://user-images.githubusercontent.com/16104239/118500835-6bcb6a00-b728-11eb-8ea1-cbe9dddd7482.png)
+![image](https://user-images.githubusercontent.com/16104239/118820385-83385d80-b8b6-11eb-8ee4-f9a86a9279fd.png)
