@@ -48,7 +48,7 @@ minimumRevision = 45702;
 extension = "nc";
 setCodePage("ascii");
 
-capabilities = CAPABILITY_MILLING;
+capabilities = CAPABILITY_MILLING | CAPABILITY_MACHINE_SIMULATION;
 tolerance = spatial(0.002, MM);
 
 minimumChordLength = spatial(0.25, MM);
@@ -1430,5 +1430,116 @@ function onClose() {
 
 function setProperty(property, value) {
   properties[property].current = value;
+}
+
+// Start of machine configuration logic
+var compensateToolLength = false; // add the tool length to the pivot distance for nonTCP rotary heads
+var virtualTooltip = false; // translate the pivot point to the virtual tool tip for nonTCP rotary heads
+// internal variables, do not change
+var receivedMachineConfiguration;
+var tcpIsSupported;
+
+function activateMachine() {
+  // determine if TCP is supported by the machine
+  tcpIsSupported = false;
+  var axes = [machineConfiguration.getAxisU(), machineConfiguration.getAxisV(), machineConfiguration.getAxisW()];
+  for (var i in axes) {
+    if (axes[i].isEnabled() && axes[i].isTCPEnabled()) {
+      tcpIsSupported = true;
+      break;
+    }
+  }
+
+  // setup usage of multiAxisFeatures
+  useMultiAxisFeatures = getProperty("useMultiAxisFeatures") != undefined ? getProperty("useMultiAxisFeatures") :
+    (typeof useMultiAxisFeatures != "undefined" ? useMultiAxisFeatures : false);
+  useABCPrepositioning = getProperty("useABCPrepositioning") != undefined ? getProperty("useABCPrepositioning") :
+    (typeof useABCPrepositioning != "undefined" ? useABCPrepositioning : false);
+
+  if (!machineConfiguration.isMachineCoordinate(0) && (typeof aOutput != "undefined")) {
+    aOutput.disable();
+  }
+  if (!machineConfiguration.isMachineCoordinate(1) && (typeof bOutput != "undefined")) {
+    bOutput.disable();
+  }
+  if (!machineConfiguration.isMachineCoordinate(2) && (typeof cOutput != "undefined")) {
+    cOutput.disable();
+  }
+
+  if (!machineConfiguration.isMultiAxisConfiguration()) {
+    return; // don't need to modify any settings for 3-axis machines
+  }
+
+  // retract/reconfigure
+  safeRetractDistance = getProperty("safeRetractDistance") != undefined ? getProperty("safeRetractDistance") :
+    (typeof safeRetractDistance == "number" ? safeRetractDistance : 0);
+  if (machineConfiguration.performRewinds() || (typeof performRewinds == "undefined" ? false : performRewinds)) {
+    machineConfiguration.enableMachineRewinds(); // enables the rewind/reconfigure logic
+    if (typeof stockExpansion != "undefined") {
+      machineConfiguration.setRewindStockExpansion(stockExpansion);
+      if (!receivedMachineConfiguration) {
+        setMachineConfiguration(machineConfiguration);
+      }
+    }
+  }
+
+  if (machineConfiguration.isHeadConfiguration()) {
+    compensateToolLength = typeof compensateToolLength == "undefined" ? false : compensateToolLength;
+    virtualTooltip = typeof virtualTooltip == "undefined" ? false : virtualTooltip;
+    machineConfiguration.setVirtualTooltip(virtualTooltip);
+  }
+  setFeedrateMode();
+
+  if (machineConfiguration.isHeadConfiguration() && compensateToolLength) {
+    for (var i = 0; i < getNumberOfSections(); ++i) {
+      var section = getSection(i);
+      if (section.isMultiAxis()) {
+        machineConfiguration.setToolLength(section.getTool().getBodyLength()); // define the tool length for head adjustments
+        section.optimizeMachineAnglesByMachine(machineConfiguration, OPTIMIZE_AXIS);
+      }
+    }
+  } else {
+    optimizeMachineAngles2(OPTIMIZE_AXIS);
+  }
+}
+
+function setFeedrateMode(reset) {
+  if ((tcpIsSupported && !reset) || !machineConfiguration.isMultiAxisConfiguration()) {
+    return;
+  }
+  machineConfiguration.setMultiAxisFeedrate(
+    tcpIsSupported ? FEED_FPM : FEED_INVERSE_TIME,
+    9999.99, // maximum output value for inverse time feed rates
+    INVERSE_MINUTES, // can be INVERSE_SECONDS or DPM_COMBINATION for DPM feeds
+    0.5, // tolerance to determine when the DPM feed has changed
+    1.0 // ratio of rotary accuracy to linear accuracy for DPM calculations
+  );
+  if (!receivedMachineConfiguration || (revision < 45765)) {
+    setMachineConfiguration(machineConfiguration);
+  }
+}
+
+function defineMachine() {
+  if (false) { // note: setup your machine here
+    var aAxis = createAxis({coordinate:0, table:true, axis:[1, 0, 0], range:[-120, 120], preference:1, tcp:true});
+    var cAxis = createAxis({coordinate:2, table:true, axis:[0, 0, 1], range:[-360, 360], preference:0, tcp:true});
+    machineConfiguration = new MachineConfiguration(aAxis, cAxis);
+
+    setMachineConfiguration(machineConfiguration);
+    if (receivedMachineConfiguration) {
+      warning(localize("The provided CAM machine configuration is overwritten by the postprocessor."));
+      receivedMachineConfiguration = false; // CAM provided machine configuration is overwritten
+    }
+  }
+  /* home positions */
+  // machineConfiguration.setHomePositionX(toPreciseUnit(0, IN));
+  // machineConfiguration.setHomePositionY(toPreciseUnit(0, IN));
+  // machineConfiguration.setRetractPlane(toPreciseUnit(0, IN));
+}
+// End of machine configuration logic
+
+function setWorkPlane(abc) {
+  // setCurrentABC() does send back the calculated ABC angles for indexing operations to the simulation.
+  setCurrentABC(abc); // required for machine simulation
 }
 // <<<<< INCLUDED FROM ../common/grbl.cps
