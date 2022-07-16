@@ -33,6 +33,8 @@ G83 works only when dwell is ZERO "0"
 add 4th axis table / rotary option into PP settings
 
 8. 19.05.2021 - fix 4 axis simultaneous operation
+
+9. 16.7.22 - disabled flood coolant (around line 190), added short description, coolant nedds to be setup for each machine to match the actual setup and components used.
 */
 
 description = "GrblHAL";
@@ -182,8 +184,13 @@ var singleLineCoolant = false; // specifies to output multiple coolant codes in 
 // samples:
 // {id: COOLANT_THROUGH_TOOL, on: 88, off: 89}
 // {id: COOLANT_THROUGH_TOOL, on: [8, 88], off: [9, 89]}
+/*
+Setup the coolant commands to match your setup, defalut codes are M7 - air, M8 - flood, M9 - turn everything off. 
+One more pin can be used via the M64/M65 codes which are here set up for suction - {id: COOLANT_SUCTION, on: 64, off:65}, it controls the P0 pin on Phils Teensy grblhal board.
+The M64/65 are handled around line 1344 in "function setCoolant(coolant)"" section.
+*/
 var coolants = [
-  {id: COOLANT_FLOOD, on: 9998, off: 9999}, // for testing in VSCode only... 
+  {id: COOLANT_FLOOD}, 
   {id: COOLANT_MIST, on: [7, 8], off: 9},
   {id: COOLANT_THROUGH_TOOL},
   {id: COOLANT_AIR, on: 7, off: 9},
