@@ -13,28 +13,10 @@
 /*
 Add change notes here!!!! DO NOT FORGET OR YOU WILL FORGET
 
-14.04.2021
-1. Update coolant settings to support air(M7) and mist(M8) as well as vac on AUX0 on Teensy 4.1 BOB
-M64 P0 to turn on and M65 P0 to turn off. Aux ports range P0 to P2.
+11.09.2022
+1. Fork of Mainbranch (last update 14.05.21) created
 
-2. Add spidnle delay to properties (dwell G4 Px - x is user adjustble (seconds)) 
-after M3/M4 command (spindle CW/CCW), defalut 2 seconds, enough for Kress spindle
-
-3. Arcs for XZ and YZ are disabled (add it as an option in the future?) grblHAL can not rotate them
-
-4. Merge Canned cycles from LinuxCNC (needs testing) G81,G82,G83
-G83 works only when dwell is ZERO "0"
-
-5. Add 4th Axis as a selectable option in PP settings. Must be in X axis direction. Simultaneous not supported.
-
-6. add G73 - not tested
-
-7.18.05.2021 - add option for the A axis to be placed along X or Y (UCCNC/CNCDrive PP source)
-add 4th axis table / rotary option into PP settings
-
-8. 19.05.2021 - fix 4 axis simultaneous operation
-
-9. 16.7.22 - disabled flood coolant (around line 190), added short description, coolant nedds to be setup for each machine to match the actual setup and components used.
+2. Cleaned up user PP properties
 */
 
 description = "GrblHAL";
@@ -66,7 +48,7 @@ properties = {
   writeMachine: {
     title: "Write machine",
     description: "Output the machine settings in the header of the code.",
-    group: 0,
+    group: "formats",
     type: "boolean",
     value: true,
     scope: "post"
@@ -74,7 +56,7 @@ properties = {
   writeTools: {
     title: "Write tool list",
     description: "Output a tool list in the header of the code.",
-    group: 0,
+    group: "formats",
     type: "boolean",
     value: true,
     scope: "post"
@@ -82,6 +64,7 @@ properties = {
   safePositionMethod: {
     title: "Safe Retracts",
     description: "Select your desired retract option. 'Clearance Height' retracts to the operation clearance height.",
+    group: "Safety",
     type: "enum",
     values: [
       {title: "G28", id: "G28"},
@@ -94,7 +77,7 @@ properties = {
   showSequenceNumbers: {
     title: "Use sequence numbers",
     description: "Use sequence numbers for each block of outputted code.",
-    group: 1,
+    group: "formats",
     type: "boolean",
     value: false,
     scope: "post"
@@ -102,7 +85,7 @@ properties = {
   sequenceNumberStart: {
     title: "Start sequence number",
     description: "The number at which to start the sequence numbers.",
-    group: 1,
+    group: "formats",
     type: "integer",
     value: 10,
     scope: "post"
@@ -110,7 +93,7 @@ properties = {
   sequenceNumberIncrement: {
     title: "Sequence number increment",
     description: "The amount by which the sequence number is incremented by in each block.",
-    group: 1,
+    group: "formats",
     type: "integer",
     value: 1,
     scope: "post"
@@ -118,6 +101,7 @@ properties = {
   separateWordsWithSpace: {
     title: "Separate words with space",
     description: "Adds spaces between words if 'yes' is selected.",
+    group: "formats",
     type: "boolean",
     value: true,
     scope: "post"
@@ -139,6 +123,7 @@ properties = {
   splitFile: {
     title: "Split file",
     description: "Select your desired file splitting option.",
+    group: "formats",
     type: "enum",
     values: [
       {title: "No splitting", id: "none"},
@@ -149,9 +134,9 @@ properties = {
     scope: "post"
   },
   spindleDelay: {
-    title: "Spindle On Delay",
+    title: "Spindle On Delay (Seconds)",
     description: "Set desired time to spin up spindle",
-    group: 1,
+    group: "Safety",
     type: "integer",
     value: 2,
     scope: "post"
@@ -159,6 +144,7 @@ properties = {
   fourthAxisAround: {
     title: "Fourth axis mounted along",
     description: "Specifies which axis the fourth axis is mounted on.",
+    group: "multiAxis",
     type: "enum",
     values: [
       {id: "none", title: "None"},
@@ -169,12 +155,17 @@ properties = {
     scope: "post"
   },
   fourthAxisIsTable: {
-    title: "Is the 4th Axis a table or rotary?",
+    title: "4th Axis is a table",
     description: "True - table, false - rotary",
+    group: "multiAxis",
     type: "boolean",
     value: false,
     scope: "post"
   }
+};
+
+groupDefinitions = {
+ Safety: {title: "Saftey Settings", description: "Settings for safe operation", collapsed: false, order:5},
 };
 
 var numberOfToolSlots = 9999;
@@ -184,13 +175,8 @@ var singleLineCoolant = false; // specifies to output multiple coolant codes in 
 // samples:
 // {id: COOLANT_THROUGH_TOOL, on: 88, off: 89}
 // {id: COOLANT_THROUGH_TOOL, on: [8, 88], off: [9, 89]}
-/*
-Setup the coolant commands to match your setup, defalut codes are M7 - air, M8 - flood, M9 - turn everything off. 
-One more pin can be used via the M64/M65 codes which are here set up for suction - {id: COOLANT_SUCTION, on: 64, off:65}, it controls the P0 pin on Phils Teensy grblhal board.
-The M64/65 are handled around line 1344 in "function setCoolant(coolant)"" section.
-*/
 var coolants = [
-  {id: COOLANT_FLOOD}, 
+  {id: COOLANT_FLOOD, on: 9998, off: 9999}, // for testing in VSCode only... 
   {id: COOLANT_MIST, on: [7, 8], off: 9},
   {id: COOLANT_THROUGH_TOOL},
   {id: COOLANT_AIR, on: 7, off: 9},
