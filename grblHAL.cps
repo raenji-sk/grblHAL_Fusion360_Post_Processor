@@ -17,6 +17,8 @@ Add change notes here!!!! DO NOT FORGET OR YOU WILL FORGET
 1. Fork of Mainbranch (last update 14.05.21) created
 
 2. Cleaned up user PP properties
+
+3. Added flexible coolant mapping to the properties
 */
 
 description = "GrblHAL";
@@ -161,30 +163,135 @@ properties = {
     type: "boolean",
     value: false,
     scope: "post"
-  }
+  },
+  floodOn: {
+    title: "Floodcoolant On:",
+    description: "M-Command for floodcoolant",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "7", title: "M7"},
+      {id: "8", title: "M8"},
+      {id: "64", title: "Aux Pin0"},
+    ],
+    value: "",
+    scope: "post"
+  },
+  floodOff: {
+    title: "Floodcoolant Off:",
+    description: "M-Command for floodcoolant Shutdown",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "9", title: "M9"},
+      {id: "65", title: "Aux Pin0"},
+    ],
+    value: "",
+    scope: "post"
+  },
+  airOn: {
+    title: "Airblast On:",
+    description: "M-Command for Airblast",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "7", title: "M7"},
+      {id: "8", title: "M8"},
+      {id: "64", title: "Aux Pin0"},
+    ],
+    value: "7",
+    scope: "post"
+  },
+  mistOn: {
+    title: "Misting On:",
+    description: "M-Command for Mistcooling",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "7", title: "M7"},
+      {id: "8", title: "M8"},
+      {id: "64", title: "Aux Pin0"},
+    ],
+    value: "8",
+    scope: "post"
+  },
+  VacOn: {
+    title: "Dustcollection On:",
+    description: "M-Command for Dustcollection",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "7", title: "M7"},
+      {id: "8", title: "M8"},
+      {id: "64", title: "Aux Pin0"},
+    ],
+    value: "64",
+    scope: "post"
+  },
+  CoolOff: {
+    title: "Turn coolants off with:",
+    description: "To include Aux Pins in coolant off behaviour",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "9", title: "M9"},
+      {id: "both", title: "M9 + Aux Pin0"},
+      {id: "65", title: "Aux Pin0"},
+    ],
+    value: "9",
+    scope: "post"
+  },
 };
 
 groupDefinitions = {
  Safety: {title: "Saftey Settings", description: "Settings for safe operation", collapsed: false, order:5},
+ Coolant: {title: "Coolant Mapping", description: "Define Machinecodes for Coolant", collapsed: true, order:25}
 };
 
 var numberOfToolSlots = 9999;
 var subprograms = new Array();
 
 var singleLineCoolant = false; // specifies to output multiple coolant codes in one line rather than in separate lines
+
 // samples:
 // {id: COOLANT_THROUGH_TOOL, on: 88, off: 89}
 // {id: COOLANT_THROUGH_TOOL, on: [8, 88], off: [9, 89]}
+/*
+Included usersettings to map coolant behaviour to different M-commands and output pins.
+M64/M65 codes are used for Aux Pin0 on Teensy driven boards (e.g. Phil's and grblHAL2000). 
+Here set as dustcollection default - Enable with Fusion "Suction" cooling. {id: COOLANT_SUCTION}
+The M64/65 are handled around line 1344 in "function setCoolant(coolant)"" section.
+*/
+
 var coolants = [
-  {id: COOLANT_FLOOD, on: 9998, off: 9999}, // for testing in VSCode only... 
-  {id: COOLANT_MIST, on: [7, 8], off: 9},
+  {id: COOLANT_FLOOD, 
+    get on() {return Number(getProperty("floodOn"))},
+    get off() {return Number(getProperty("floodOff"))}
+  },
+  {id: COOLANT_MIST,
+    get on() {return [Number(getProperty("airOn")), Number(getProperty("mistOn"))]},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
   {id: COOLANT_THROUGH_TOOL},
-  {id: COOLANT_AIR, on: 7, off: 9},
+  {id: COOLANT_AIR,
+    get on() {return Number(getProperty("airOn"))},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
   {id: COOLANT_AIR_THROUGH_TOOL},
-  {id: COOLANT_SUCTION, on: 64, off:65},
+  {id: COOLANT_SUCTION,
+    get on() {return Number(getProperty("VacOn"))},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
   {id: COOLANT_FLOOD_MIST},
   {id: COOLANT_FLOOD_THROUGH_TOOL},
-  {id: COOLANT_OFF, off: 9}
+  {id: COOLANT_OFF,
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
 ];
 
 var gFormat = createFormat({prefix:"G", decimals:0});
