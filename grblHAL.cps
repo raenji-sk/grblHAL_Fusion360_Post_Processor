@@ -178,19 +178,6 @@ properties = {
     value: "",
     scope: "post"
   },
-  floodOff: {
-    title: "Floodcoolant Off:",
-    description: "M-Command for floodcoolant Shutdown",
-    group: "Coolant",
-    type: "enum",
-    values: [
-      {id: "", title: "None"},
-      {id: "9", title: "M9"},
-      {id: "65", title: "Aux Pin0"},
-    ],
-    value: "",
-    scope: "post"
-  },
   airOn: {
     title: "Airblast On:",
     description: "M-Command for Airblast",
@@ -271,7 +258,7 @@ The M64/65 are handled around line 1344 in "function setCoolant(coolant)"" secti
 var coolants = [
   {id: COOLANT_FLOOD, 
     get on() {return Number(getProperty("floodOn"))},
-    get off() {return Number(getProperty("floodOff"))}
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
   },
   {id: COOLANT_MIST,
     get on() {return [Number(getProperty("airOn")), Number(getProperty("mistOn"))]},
