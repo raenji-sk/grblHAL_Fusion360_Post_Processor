@@ -7,6 +7,7 @@ Experimental grblHAL post processor with canned cycles and 4th axis support for 
 Added features and modifications:
 
 1. Cleaned up user PP properties
+2. Added coolant mapping to Userproperties
 
 
 ![image](https://github.com/Dietz0r/grblHAL_Fusion360_Post_Processor/blob/main/PPOptions.png)
