@@ -13,28 +13,12 @@
 /*
 Add change notes here!!!! DO NOT FORGET OR YOU WILL FORGET
 
-14.04.2021
-1. Update coolant settings to support air(M7) and mist(M8) as well as vac on AUX0 on Teensy 4.1 BOB
-M64 P0 to turn on and M65 P0 to turn off. Aux ports range P0 to P2.
+11.09.2022
+1. Fork of Mainbranch (last update 14.05.21) created
 
-2. Add spidnle delay to properties (dwell G4 Px - x is user adjustble (seconds)) 
-after M3/M4 command (spindle CW/CCW), defalut 2 seconds, enough for Kress spindle
+2. Cleaned up user PP properties
 
-3. Arcs for XZ and YZ are disabled (add it as an option in the future?) grblHAL can not rotate them
-
-4. Merge Canned cycles from LinuxCNC (needs testing) G81,G82,G83
-G83 works only when dwell is ZERO "0"
-
-5. Add 4th Axis as a selectable option in PP settings. Must be in X axis direction. Simultaneous not supported.
-
-6. add G73 - not tested
-
-7.18.05.2021 - add option for the A axis to be placed along X or Y (UCCNC/CNCDrive PP source)
-add 4th axis table / rotary option into PP settings
-
-8. 19.05.2021 - fix 4 axis simultaneous operation
-
-9. 16.7.22 - disabled flood coolant (around line 190), added short description, coolant nedds to be setup for each machine to match the actual setup and components used.
+3. Added flexible coolant mapping to the properties
 */
 
 description = "GrblHAL";
@@ -66,7 +50,7 @@ properties = {
   writeMachine: {
     title: "Write machine",
     description: "Output the machine settings in the header of the code.",
-    group: 0,
+    group: "formats",
     type: "boolean",
     value: true,
     scope: "post"
@@ -74,7 +58,7 @@ properties = {
   writeTools: {
     title: "Write tool list",
     description: "Output a tool list in the header of the code.",
-    group: 0,
+    group: "formats",
     type: "boolean",
     value: true,
     scope: "post"
@@ -82,6 +66,7 @@ properties = {
   safePositionMethod: {
     title: "Safe Retracts",
     description: "Select your desired retract option. 'Clearance Height' retracts to the operation clearance height.",
+    group: "Safety",
     type: "enum",
     values: [
       {title: "G28", id: "G28"},
@@ -94,7 +79,7 @@ properties = {
   showSequenceNumbers: {
     title: "Use sequence numbers",
     description: "Use sequence numbers for each block of outputted code.",
-    group: 1,
+    group: "formats",
     type: "boolean",
     value: false,
     scope: "post"
@@ -102,7 +87,7 @@ properties = {
   sequenceNumberStart: {
     title: "Start sequence number",
     description: "The number at which to start the sequence numbers.",
-    group: 1,
+    group: "formats",
     type: "integer",
     value: 10,
     scope: "post"
@@ -110,7 +95,7 @@ properties = {
   sequenceNumberIncrement: {
     title: "Sequence number increment",
     description: "The amount by which the sequence number is incremented by in each block.",
-    group: 1,
+    group: "formats",
     type: "integer",
     value: 1,
     scope: "post"
@@ -118,6 +103,7 @@ properties = {
   separateWordsWithSpace: {
     title: "Separate words with space",
     description: "Adds spaces between words if 'yes' is selected.",
+    group: "formats",
     type: "boolean",
     value: true,
     scope: "post"
@@ -139,6 +125,7 @@ properties = {
   splitFile: {
     title: "Split file",
     description: "Select your desired file splitting option.",
+    group: "formats",
     type: "enum",
     values: [
       {title: "No splitting", id: "none"},
@@ -149,9 +136,9 @@ properties = {
     scope: "post"
   },
   spindleDelay: {
-    title: "Spindle On Delay",
+    title: "Spindle On Delay (Seconds)",
     description: "Set desired time to spin up spindle",
-    group: 1,
+    group: "Safety",
     type: "integer",
     value: 2,
     scope: "post"
@@ -159,6 +146,7 @@ properties = {
   fourthAxisAround: {
     title: "Fourth axis mounted along",
     description: "Specifies which axis the fourth axis is mounted on.",
+    group: "multiAxis",
     type: "enum",
     values: [
       {id: "none", title: "None"},
@@ -169,36 +157,128 @@ properties = {
     scope: "post"
   },
   fourthAxisIsTable: {
-    title: "Is the 4th Axis a table or rotary?",
+    title: "4th Axis is a table",
     description: "True - table, false - rotary",
+    group: "multiAxis",
     type: "boolean",
     value: false,
     scope: "post"
-  }
+  },
+  floodOn: {
+    title: "Floodcoolant On:",
+    description: "M-Command for floodcoolant",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "7", title: "M7"},
+      {id: "8", title: "M8"},
+      {id: "64", title: "Aux Pin0"},
+    ],
+    value: "",
+    scope: "post"
+  },
+  airOn: {
+    title: "Airblast On:",
+    description: "M-Command for Airblast",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "7", title: "M7"},
+      {id: "8", title: "M8"},
+      {id: "64", title: "Aux Pin0"},
+    ],
+    value: "7",
+    scope: "post"
+  },
+  mistOn: {
+    title: "Misting On:",
+    description: "M-Command for Mistcooling",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "7", title: "M7"},
+      {id: "8", title: "M8"},
+      {id: "64", title: "Aux Pin0"},
+    ],
+    value: "8",
+    scope: "post"
+  },
+  VacOn: {
+    title: "Dustcollection On:",
+    description: "M-Command for Dustcollection",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "", title: "None"},
+      {id: "7", title: "M7"},
+      {id: "8", title: "M8"},
+      {id: "64", title: "Aux Pin0"},
+    ],
+    value: "64",
+    scope: "post"
+  },
+  CoolOff: {
+    title: "Turn coolants off with:",
+    description: "To include Aux Pins in coolant off behaviour",
+    group: "Coolant",
+    type: "enum",
+    values: [
+      {id: "9", title: "M9"},
+      {id: "both", title: "M9 + Aux Pin0"},
+      {id: "65", title: "Aux Pin0"},
+    ],
+    value: "9",
+    scope: "post"
+  },
+};
+
+groupDefinitions = {
+ Safety: {title: "Saftey Settings", description: "Settings for safe operation", collapsed: false, order:5},
+ Coolant: {title: "Coolant Mapping", description: "Define Machinecodes for Coolant", collapsed: true, order:25}
 };
 
 var numberOfToolSlots = 9999;
 var subprograms = new Array();
 
 var singleLineCoolant = false; // specifies to output multiple coolant codes in one line rather than in separate lines
+
 // samples:
 // {id: COOLANT_THROUGH_TOOL, on: 88, off: 89}
 // {id: COOLANT_THROUGH_TOOL, on: [8, 88], off: [9, 89]}
 /*
-Setup the coolant commands to match your setup, defalut codes are M7 - air, M8 - flood, M9 - turn everything off. 
-One more pin can be used via the M64/M65 codes which are here set up for suction - {id: COOLANT_SUCTION, on: 64, off:65}, it controls the P0 pin on Phils Teensy grblhal board.
+Included usersettings to map coolant behaviour to different M-commands and output pins.
+M64/M65 codes are used for Aux Pin0 on Teensy driven boards (e.g. Phil's and grblHAL2000). 
+Here set as dustcollection default - Enable with Fusion "Suction" cooling. {id: COOLANT_SUCTION}
 The M64/65 are handled around line 1344 in "function setCoolant(coolant)"" section.
 */
+
 var coolants = [
-  {id: COOLANT_FLOOD}, 
-  {id: COOLANT_MIST, on: [7, 8], off: 9},
+  {id: COOLANT_FLOOD, 
+    get on() {return Number(getProperty("floodOn"))},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
+  {id: COOLANT_MIST,
+    get on() {return [Number(getProperty("airOn")), Number(getProperty("mistOn"))]},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
   {id: COOLANT_THROUGH_TOOL},
-  {id: COOLANT_AIR, on: 7, off: 9},
+  {id: COOLANT_AIR,
+    get on() {return Number(getProperty("airOn"))},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
   {id: COOLANT_AIR_THROUGH_TOOL},
-  {id: COOLANT_SUCTION, on: 64, off:65},
+  {id: COOLANT_SUCTION,
+    get on() {return Number(getProperty("VacOn"))},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
   {id: COOLANT_FLOOD_MIST},
   {id: COOLANT_FLOOD_THROUGH_TOOL},
-  {id: COOLANT_OFF, off: 9}
+  {id: COOLANT_OFF,
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
 ];
 
 var gFormat = createFormat({prefix:"G", decimals:0});
