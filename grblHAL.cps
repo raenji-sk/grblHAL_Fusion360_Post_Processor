@@ -110,16 +110,16 @@ properties = {
   },
   useToolChanger: {
     title: "Output tool number",
-    description: "Disable to disallow the output of tool numbers (Txx).",
+    description: "Outputs Toolnumber code for tool changes when enabled. (Txx).",
     type: "boolean",
     value: true,
     scope: "post"
   },
   useM06: {
     title: "Output M6",
-    description: "Disable to disallow the output of M6 on tool changes.",
+    description: "Outputs M6 code for tool changes when enabled.",
     type: "boolean",
-    value: false,
+    value: true,
     scope: "post"
   },
   splitFile: {
