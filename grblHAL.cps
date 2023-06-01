@@ -13,11 +13,13 @@
 /*
 Add change notes here!!!! DO NOT FORGET OR YOU WILL FORGET
 
+01.06.2023
+1. Added toolchange message support
+2. Updated grblHAL repositroy reference link
+
 11.09.2022
 1. Fork of Mainbranch (last update 14.05.21) created
-
 2. Cleaned up user PP properties
-
 3. Added flexible coolant mapping to the properties
 */
 
@@ -110,16 +112,23 @@ properties = {
   },
   useToolChanger: {
     title: "Output tool number",
-    description: "Outputs Toolnumber code for tool changes when enabled. (Txx).",
+    description: "Disable to disallow the output of tool numbers (Txx).",
     type: "boolean",
     value: true,
     scope: "post"
   },
   useM06: {
     title: "Output M6",
-    description: "Outputs M6 code for tool changes when enabled.",
+    description: "Disable to disallow the output of M6 on tool changes.",
     type: "boolean",
-    value: true,
+    value: false,
+    scope: "post"
+  },
+  useToolMSG: {
+    title: "Output Tool Message",
+    description: "Disable to disallow the output of Tool Info on tool changes.",
+    type: "boolean",
+    value: false,
     scope: "post"
   },
   splitFile: {
@@ -777,7 +786,13 @@ function onSection() {
     }
 
     if (getProperty("useToolChanger")) {
-      writeBlock("T" + toolFormat.format(tool.number), conditional(getProperty("useM06"), mFormat.format(6)));
+      writeBlock("T" + toolFormat.format(tool.number), 
+        conditional(getProperty("useM06"), mFormat.format(6)), 
+        conditional(getProperty("useToolMSG"), formatComment(
+          "MSG,T" + xyzFormat.format(tool.number) + 
+          " " + xyzFormat.format(tool.diameter) + 
+          "mm " + xyzFormat.format(tool.numberOfFlutes) + 
+          "f " + getToolTypeName(tool.type))));
       if (!isFirstSection() && !getProperty("useM06")) {
         writeComment(localize("CHANGE TO T") + tool.number);
       }
@@ -1106,7 +1121,7 @@ function onCyclePoint(x, y, z) {
             _z = zOutput.format(z);
             break;
         case 19: // YZ
-            yOutput.reset(); // at least one axis is required
+            yOutput.reset(); // at least one axis is requiredid
             _y = yOutput.format(y);
             break;
         }
