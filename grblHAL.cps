@@ -790,9 +790,9 @@ function onSection() {
         conditional(getProperty("useM06"), mFormat.format(6)), 
         conditional(getProperty("useToolMSG"), formatComment(
           "MSG,T" + xyzFormat.format(tool.number) + 
-          " " + xyzFormat.format(tool.diameter) + 
-          "mm " + xyzFormat.format(tool.numberOfFlutes) + 
-          "f " + getToolTypeName(tool.type))));
+          " " + xyzFormat.format(tool.diameter) + conditional(unit==MM,"mm") + conditional(unit==IN,"in") +
+          " " + xyzFormat.format(tool.numberOfFlutes) + 
+          "flute " + getToolTypeName(tool.type))));
       if (!isFirstSection() && !getProperty("useM06")) {
         writeComment(localize("CHANGE TO T") + tool.number);
       }
