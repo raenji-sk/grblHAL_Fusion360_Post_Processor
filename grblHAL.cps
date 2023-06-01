@@ -121,7 +121,7 @@ properties = {
     title: "Output M6",
     description: "Outputs M6 code for tool changes when enabled.",
     type: "boolean",
-    value: false,
+    value: true,
     scope: "post"
   },
   useToolMSG: {
