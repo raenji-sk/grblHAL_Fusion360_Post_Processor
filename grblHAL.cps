@@ -1121,7 +1121,7 @@ function onCyclePoint(x, y, z) {
             _z = zOutput.format(z);
             break;
         case 19: // YZ
-            yOutput.reset(); // at least one axis is requiredid
+            yOutput.reset(); // at least one axis is required
             _y = yOutput.format(y);
             break;
         }
