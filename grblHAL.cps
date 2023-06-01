@@ -23,8 +23,8 @@ Add change notes here!!!! DO NOT FORGET OR YOU WILL FORGET
 
 description = "GrblHAL";
 vendor = "GrblHAL";
-vendorUrl = "https://github.com/terjeio/grblHAL";
-longDescription = "GrblHAL PP with added features";
+vendorUrl = "https://github.com/grblHAL";
+longDescription = "GrblHAL PostProcessor with added features";
 
 // >>>>> INCLUDED FROM ../common/grbl.cps
 legal = "Copyright (C) 2012-2021 by Autodesk, Inc.";
