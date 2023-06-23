@@ -13,6 +13,10 @@
 /*
 Add change notes here!!!! DO NOT FORGET OR YOU WILL FORGET
 
+23.06.2023
+1. Added option to change Airblast behaviour while mistcooling
+2. Added Flood&Mist Cooling Support
+
 01.06.2023
 1. Added toolchange message support
 2. Updated grblHAL repositroy reference link
@@ -121,12 +125,12 @@ properties = {
     title: "Output M6",
     description: "Outputs M6 code for tool changes when enabled.",
     type: "boolean",
-    value: true,
+    value: false,
     scope: "post"
   },
   useToolMSG: {
     title: "Output Tool Message",
-    description: "Disable to disallow the output of Tool Info on tool changes.",
+    description: "Enable output of tool info message on tool changes.",
     type: "boolean",
     value: false,
     scope: "post"
@@ -242,6 +246,14 @@ properties = {
     value: "9",
     scope: "post"
   },
+  AirWhileMist: {
+    title: "Airblast while Misting.",
+    description: "To turn on the Airblast supply while Mistcooling is Enabled",
+    group: "Coolant",
+    type: "boolean",
+    value: true,
+    scope: "post"
+  },
 };
 
 groupDefinitions = {
@@ -270,7 +282,7 @@ var coolants = [
     get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
   },
   {id: COOLANT_MIST,
-    get on() {return [Number(getProperty("airOn")), Number(getProperty("mistOn"))]},
+    get on() {if (getProperty("AirWhileMist") == true) {return [Number(getProperty("airOn")), Number(getProperty("mistOn"))]} else {return Number(getProperty("mistOn"))}},
     get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
   },
   {id: COOLANT_THROUGH_TOOL},
@@ -283,7 +295,10 @@ var coolants = [
     get on() {return Number(getProperty("VacOn"))},
     get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
   },
-  {id: COOLANT_FLOOD_MIST},
+  {id: COOLANT_FLOOD_MIST,
+    get on() {return [Number(getProperty("floodOn")), Number(getProperty("mistOn"))]},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
   {id: COOLANT_FLOOD_THROUGH_TOOL},
   {id: COOLANT_OFF,
     get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
