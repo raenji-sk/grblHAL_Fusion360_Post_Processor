@@ -3,6 +3,10 @@ Experimental grblHAL post processor with canned cycles and 4th axis support for 
 
 Added features and modifications:
 
+23.06.2023
+1. Added option to change Airblast behaviour while mistcooling
+2. Added Flood&Mist Cooling Support
+
 01.06.2023
 1. Added toolchange message support
 2. Updated grblHAL repositroy reference link
