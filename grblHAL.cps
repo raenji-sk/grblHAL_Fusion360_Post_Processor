@@ -13,6 +13,9 @@
 /*
 Add change notes here!!!! DO NOT FORGET OR YOU WILL FORGET
 
+12.01.2024
+1. Added initial retract to clearance height for SafePosition:Clearance height method.
+
 23.06.2023
 1. Added option to change Airblast behaviour while mistcooling
 2. Added Flood&Mist Cooling Support
@@ -1380,6 +1383,8 @@ function writeRetract() {
     if (!is3D()) {
       error(localize("Retract option 'Clearance Height' is not supported for multi-axis machining."));
     }
+    var initialPosition = getFramePosition(currentSection.getInitialPosition());
+    writeBlock(gMotionModal.format(0), zOutput.format(initialPosition.z));
     return;
   }
   validate(arguments.length != 0, "No axis specified for writeRetract().");
