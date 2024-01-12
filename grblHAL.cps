@@ -13,18 +13,27 @@
 /*
 Add change notes here!!!! DO NOT FORGET OR YOU WILL FORGET
 
+12.01.2024
+1. Added initial retract to clearance height for SafePosition:Clearance height method.
+
+23.06.2023
+1. Added option to change Airblast behaviour while mistcooling
+2. Added Flood&Mist Cooling Support
+
+01.06.2023
+1. Added toolchange message support
+2. Updated grblHAL repositroy reference link
+
 11.09.2022
 1. Fork of Mainbranch (last update 14.05.21) created
-
 2. Cleaned up user PP properties
-
 3. Added flexible coolant mapping to the properties
 */
 
 description = "GrblHAL";
 vendor = "GrblHAL";
-vendorUrl = "https://github.com/terjeio/grblHAL";
-longDescription = "GrblHAL PP with added features";
+vendorUrl = "https://github.com/grblHAL";
+longDescription = "GrblHAL PostProcessor with added features";
 
 // >>>>> INCLUDED FROM ../common/grbl.cps
 legal = "Copyright (C) 2012-2021 by Autodesk, Inc.";
@@ -110,14 +119,21 @@ properties = {
   },
   useToolChanger: {
     title: "Output tool number",
-    description: "Disable to disallow the output of tool numbers (Txx).",
+    description: "Outputs Toolnumber code for tool changes when enabled. (Txx).",
     type: "boolean",
     value: true,
     scope: "post"
   },
   useM06: {
     title: "Output M6",
-    description: "Disable to disallow the output of M6 on tool changes.",
+    description: "Outputs M6 code for tool changes when enabled.",
+    type: "boolean",
+    value: true,
+    scope: "post"
+  },
+  useToolMSG: {
+    title: "Output Tool Message",
+    description: "Enable output of tool info message on tool changes.",
     type: "boolean",
     value: false,
     scope: "post"
@@ -233,6 +249,14 @@ properties = {
     value: "9",
     scope: "post"
   },
+  AirWhileMist: {
+    title: "Airblast while Misting.",
+    description: "To turn on the Airblast supply while Mistcooling is Enabled",
+    group: "Coolant",
+    type: "boolean",
+    value: true,
+    scope: "post"
+  },
 };
 
 groupDefinitions = {
@@ -261,7 +285,7 @@ var coolants = [
     get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
   },
   {id: COOLANT_MIST,
-    get on() {return [Number(getProperty("airOn")), Number(getProperty("mistOn"))]},
+    get on() {if (getProperty("AirWhileMist") == true) {return [Number(getProperty("airOn")), Number(getProperty("mistOn"))]} else {return Number(getProperty("mistOn"))}},
     get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
   },
   {id: COOLANT_THROUGH_TOOL},
@@ -274,7 +298,10 @@ var coolants = [
     get on() {return Number(getProperty("VacOn"))},
     get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
   },
-  {id: COOLANT_FLOOD_MIST},
+  {id: COOLANT_FLOOD_MIST,
+    get on() {return [Number(getProperty("floodOn")), Number(getProperty("mistOn"))]},
+    get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
+  },
   {id: COOLANT_FLOOD_THROUGH_TOOL},
   {id: COOLANT_OFF,
     get off() {if (getProperty("CoolOff") == 9) { return 9} else if (getProperty("CoolOff") == 65) {return number(65) } else {return [9, 65]}}
@@ -777,7 +804,13 @@ function onSection() {
     }
 
     if (getProperty("useToolChanger")) {
-      writeBlock("T" + toolFormat.format(tool.number), conditional(getProperty("useM06"), mFormat.format(6)));
+      writeBlock("T" + toolFormat.format(tool.number), 
+        conditional(getProperty("useM06"), mFormat.format(6)), 
+        conditional(getProperty("useToolMSG"), formatComment(
+          "MSG,T" + xyzFormat.format(tool.number) + 
+          " " + xyzFormat.format(tool.diameter) + conditional(unit==MM,"mm") + conditional(unit==IN,"in") +
+          " " + xyzFormat.format(tool.numberOfFlutes) + 
+          "flute " + getToolTypeName(tool.type))));
       if (!isFirstSection() && !getProperty("useM06")) {
         writeComment(localize("CHANGE TO T") + tool.number);
       }
@@ -1350,6 +1383,8 @@ function writeRetract() {
     if (!is3D()) {
       error(localize("Retract option 'Clearance Height' is not supported for multi-axis machining."));
     }
+    var initialPosition = getFramePosition(currentSection.getInitialPosition());
+    writeBlock(gMotionModal.format(0), zOutput.format(initialPosition.z));
     return;
   }
   validate(arguments.length != 0, "No axis specified for writeRetract().");
